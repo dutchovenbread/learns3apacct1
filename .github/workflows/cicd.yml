@@ -25,12 +25,32 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
+      # # Runs a single command using the runners shell
+      # - name: Run a one-line script
+      #   run: echo Hello, world!
 
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
+      # # Runs a set of commands using the runners shell
+      # - name: Run a multi-line script
+      #   run: |
+      #     echo Add other actions to build,
+      #     echo test, and deploy your project.
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Verify AWS credentials
+        run: aws sts get-caller-identity
+      - name: Validate Bucket CloudFormation template
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          aws cloudformation validate-template \
+            --template-body file://cloudformation_dynamic/bucket.yaml
+      # - name: Deploy S3 Bucket Stack
+      #   run: |
+      #     aws cloudformation deploy \
+      #       --template-file cloudformation_dynamic/bucket.yaml \
+      #       --stack-name ansiblelab-bucket \
+      #       --capabilities CAPABILITY_NAMED_IAM \
+      #       --parameter-overrides BucketName=ansiblelab-bucket-20260104
+

@@ -1,0 +1,53 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Deployment of a KMS key for S3 bucket default encryption'
+
+Parameters:
+  PeerAccount:
+    Type: String
+    Description: 'The AWS account ID of the peer account that will have cross-account access to the KMS key'
+    Default: '429648923701'
+  KeyAlias:
+    Type: String
+    Description: 'The alias for the KMS key'
+    Default: 'access-point-demo-key'
+
+Resources:
+  MyKMSKey:
+    Type: 'AWS::KMS::Key'
+    Properties:
+      Description: 'KMS key used for S3 bucket default encryption'
+      Enabled: true
+      KeySpec: 'SYMMETRIC_DEFAULT'
+      KeyPolicy:
+        Version: '2012-10-17'
+        Id: 's3-kms-key-policy'
+        Statement:
+          - Sid: 'Enable IAM User Permissions In the current account for the KMS key.'
+            Effect: 'Allow'
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: 'Enable encrypt and decrypt and other needed permissions cross-account for the KMS key.'
+            Effect: 'Allow'
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${PeerAccount}:root'
+            Action:
+              - 'kms:Encrypt'
+              - 'kms:Decrypt'
+              - 'kms:ReEncrypt*'
+              - 'kms:GenerateDataKey*'
+              - 'kms:DescribeKey'
+            Resource: '*'
+
+  MyKMSKeyAlias:
+    Type: 'AWS::KMS::Alias'
+    Properties:
+      AliasName: !Ref KeyAlias
+      TargetKeyId: !Ref MyKMSKey
+
+Outputs:
+  MyKMSKeyArn:
+    Description: 'ARN of the KMS key'
+    Value: !GetAtt MyKMSKey.Arn
+
