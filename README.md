@@ -1,6 +1,8 @@
 ## Purpose
 
-The purpose of this repo is to store files for a demo of S3 access ponts.
+The purpose of this repo is to store files for a demo of S3 access points. Changes to this repo will be automatically deployed to Account #1.
+
+
 
 ## Relevant accounts
 
