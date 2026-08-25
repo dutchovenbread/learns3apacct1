@@ -10,7 +10,7 @@ Parameters:
   GitHubRepo:
     Type: String
     Description: GitHub repository name
-    Default: ansiblelab
+    Default: learns3apacct1
 
   GitHubThumbprint1:
     Type: String

@@ -1,0 +1,71 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Deployment bucket for TDD with Python application deployed on EC2 with public IP'
+
+Parameters:
+
+  BucketName:
+    Type: String
+    Description: S3 Bucket name for application data
+    Default: source-bucket-20260824
+
+
+
+  DeploymentBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName
+      AccessControl: Private
+      Tags:
+        - Key: Name
+          Value: !Ref BucketName
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+            BucketKeyEnabled: true
+
+
+Resources:
+  # 1. Create the Customer Managed KMS Key
+  MyKMSKey:
+    Type: 'AWS::KMS::Key'
+    Properties:
+      Description: 'KMS key used for S3 bucket default encryption'
+      Enabled: true
+      KeySpec: 'SYMMETRIC_DEFAULT'
+      KeyPolicy:
+        Version: '2012-10-17'
+        Id: 's3-kms-key-policy'
+        Statement:
+          - Sid: 'Enable IAM User Permissions'
+            Effect: 'Allow'
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+
+  # 2. Create an optional Alias for the KMS Key to make it easier to identify
+  MyKMSKeyAlias:
+    Type: 'AWS::KMS::Alias'
+    Properties:
+      AliasName: 'alias/my-s3-encryption-key'
+      TargetKeyId: !Ref MyKMSKey
+
+  # 3. Create the S3 Bucket and attach the KMS Key for Default Encryption
+  MyEncryptedBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: 'aws:kms'
+              KMSMasterKeyID: !GetAtt MyKMSKey.Arn
+            BucketKeyEnabled: true
+
+Outputs:
+  BucketName:
+    Description: 'The name of the created S3 bucket'
+    Value: !Ref MyEncryptedBucket
+  KMSKeyArn:
+    Description: 'The ARN of the created KMS key'
+    Value: !GetAtt MyKMSKey.Arn
